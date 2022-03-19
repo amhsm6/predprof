@@ -12,7 +12,6 @@ IN3 = 8
 IN4 = 25
 ENA = 12
 ENB = 13
-SRV = 1
 
 RECT = np.float32([[0, 299],
                    [399, 299],
@@ -25,7 +24,7 @@ TRAP = np.float32([[0, 299],
                    [80, 200]])
 
 class Robot:
-    def __init__(self, kp, kd):
+    def __init__(self):
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
 
@@ -35,28 +34,29 @@ class Robot:
         GPIO.setup(IN4, GPIO.OUT)
         GPIO.setup(ENA, GPIO.OUT)
         GPIO.setup(ENB, GPIO.OUT)
-        GPIO.setup(SRV, GPIO.OUT)
+        #GPIO.setup(SRV, GPIO.OUT)
 
         GPIO.output(IN1, GPIO.HIGH)
         GPIO.output(IN2, GPIO.LOW)
         self.ml = GPIO.PWM(ENA, 1000) 
         self.ml.stop()
-        self.ml.start(10)
+        self.ml.start(0)
 
         GPIO.output(IN3, GPIO.HIGH)
         GPIO.output(IN4, GPIO.LOW)
         self.mr = GPIO.PWM(ENB, 1000)
         self.mr.stop()
-        self.mr.start(10)
+        self.mr.start(0)
 
-        self.srv = GPIO.PWM(SRV, 50)
-        self.srv.stop()
-        self.srv.start(0)
-
-        self.kp = kp
-        self.kd = kd
+        #self.srv = GPIO.PWM(SRV, 50)
+        #self.srv.stop()
+        #self.srv.start(0)
         
         self.erld = 0
+
+    def stop(self):
+        self.ml.stop()
+        self.mr.stop()
 
     def detect_edges(self, hsv):
         lower_blue = np.array([90, 120, 0], dtype="uint8")
@@ -201,9 +201,37 @@ class Robot:
         elif way == 'left':
             err = 120 - left
 
-        up = err * self.kp + (err - self.erld) * self.kd
+        up = err * 0.4 + (err - self.erld) * 0.05
         self.erld = err
         vl = speed + up
         vr = speed - up
 
         self.move(vl, vr)
+
+    def detect_color(self, img, color):
+        img = cv.resize(img, (400, 300))
+        if color == "red":
+            lower_mask = [0, 0, 100]
+            upper_mask = [90, 90, 220]
+        elif color == "yellow":
+            lower_mask = [0, 150, 120]
+            upper_mask = [130, 220, 220]
+
+        img = cv.inRange(img, np.array(lower_mask), np.array(upper_mask))
+
+        s = np.sum(img)
+        if s > 1000000:
+            return (True, img)
+        return (False, [])
+
+    def center(self, img):
+        ctrs, _ = cv.findContours(img, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        rect = cv.boundingRect(max(ctrs, key=cv.contourArea))
+
+        cube_x = rect[0]+rect[2]//2
+        err = 200 - cube_x
+        up = err * 0.2 + (err - self.erld) * 0.3
+        self.erld = err
+        self.move(-up, up)
+
+        return err
