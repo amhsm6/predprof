@@ -5,6 +5,7 @@ from picamera import PiCamera
 from picamera.array import PiRGBArray
 import RPi.GPIO as GPIO
 import func
+import time
 
 IN1 = 1
 IN2 = 7
@@ -12,6 +13,7 @@ IN3 = 8
 IN4 = 25
 ENA = 12
 ENB = 13
+SRV = 17
 
 RECT = np.float32([[0, 299],
                    [399, 299],
@@ -34,7 +36,7 @@ class Robot:
         GPIO.setup(IN4, GPIO.OUT)
         GPIO.setup(ENA, GPIO.OUT)
         GPIO.setup(ENB, GPIO.OUT)
-        #GPIO.setup(SRV, GPIO.OUT)
+        GPIO.setup(SRV, GPIO.OUT)
 
         GPIO.output(IN1, GPIO.HIGH)
         GPIO.output(IN2, GPIO.LOW)
@@ -47,16 +49,16 @@ class Robot:
         self.mr = GPIO.PWM(ENB, 1000)
         self.mr.stop()
         self.mr.start(0)
-
-        #self.srv = GPIO.PWM(SRV, 50)
-        #self.srv.stop()
-        #self.srv.start(0)
         
         self.erld = 0
-
-    def stop(self):
-        self.ml.stop()
-        self.mr.stop()
+        
+    def servo_move(self, angle):
+        pwm = GPIO.PWM(SRV, 50)
+        pwm.start(8)
+        data = angle / 18.0 + 3.0
+        pwm.ChangeDutyCycle(data)
+        time.sleep(0.5)
+        pwm.stop()
 
     def detect_edges(self, hsv):
         lower_blue = np.array([90, 120, 0], dtype="uint8")
@@ -211,18 +213,29 @@ class Robot:
     def detect_color(self, img, color):
         img = cv.resize(img, (400, 300))
         if color == "red":
-            lower_mask = [0, 0, 100]
-            upper_mask = [90, 90, 220]
+            lower = [0, 0, 100]
+            upper = [90, 90, 220]
         elif color == "yellow":
-            lower_mask = [0, 150, 120]
-            upper_mask = [130, 220, 220]
+            lower = [0, 150, 120]
+            upper = [130, 220, 220]
 
-        img = cv.inRange(img, np.array(lower_mask), np.array(upper_mask))
+        img = cv.inRange(img, np.array(lower), np.array(upper))
 
         s = np.sum(img)
         if s > 1000000:
             return (True, img)
         return (False, [])
+
+    def detect_end(self, img):
+        lower = [130, 70, 0]
+        upper = [240, 180, 90]
+        img = cv.inRange(img, np.array(lower), np.array(upper))
+        cv.imshow("123", img)
+
+        s = np.sum(img)
+        if s > 2000000:
+            return True
+        return False
 
     def center(self, img):
         ctrs, _ = cv.findContours(img, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
@@ -235,3 +248,9 @@ class Robot:
         self.move(-up, up)
 
         return err
+
+    def close(self):
+        self.servo_move(0)
+
+    def open(self):
+        self.servo_move(90)
