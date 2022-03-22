@@ -203,7 +203,7 @@ class Robot:
         elif way == 'left':
             err = 120 - left
 
-        up = err * 0.4 + (err - self.erld) * 0.05
+        up = err * 0.2 + (err - self.erld) * 0.1
         self.erld = err
         vl = speed + up
         vr = speed - up
@@ -218,8 +218,15 @@ class Robot:
         elif color == "yellow":
             lower = [0, 150, 120]
             upper = [130, 220, 220]
+        elif color == "green":
+            lower = [0, 100, 0]
+            upper = [100, 220, 120]
+        elif color == "brown":
+            lower = [0, 60, 100]
+            upper = [80, 120, 220]
 
         img = cv.inRange(img, np.array(lower), np.array(upper))
+        cv.imshow("123", img)
 
         s = np.sum(img)
         if s > 1000000:
@@ -230,7 +237,6 @@ class Robot:
         lower = [130, 70, 0]
         upper = [240, 180, 90]
         img = cv.inRange(img, np.array(lower), np.array(upper))
-        cv.imshow("123", img)
 
         s = np.sum(img)
         if s > 2000000:

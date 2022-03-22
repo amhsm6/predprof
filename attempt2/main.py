@@ -57,20 +57,38 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
             time.sleep(0.5)
             robot.close()
             time.sleep(1)
-            trig += 2
-
-            robot.move(-50, 50)
-            time.sleep(2)
             robot.move(50, 50)
-            time.sleep(1)
+            trig += 2
+        elif trig == 5 or trig == 6:
+            if robot.detect_end(image):
+                robot.move(-50, 50)
+                trig += 2
+        elif trig == 7 or trig == 8:
+            if not robot.detect_end(image):
+                time.sleep(0.1)
+                trig += 2
+        elif trig == 9 or trig == 10:
+            robot.line(image, 30, "right")
+            
+            #if robot.detect_color(image, "green"):
+            #    if trig == 9:
+            #        trig == 11
+
+            if robot.detect_color(image, "brown"):
+                if trig == 10:
+                    trig == 12
+        elif trig == 11 or trig == 12:
+            robot.move(50, 50)
+            time.sleep(0.3)
             robot.move(0, 0)
             robot.open()
-            time.sleep(3)
-            trig = 0
-        elif trig == 5:
-            pass
-        elif trig == 6:
-            pass
+            time.sleep(1.0)
+            robot.move(-50, -50)
+            time.sleep(0.2)
+            robot.move(-50, 50)
+            time.sleep(0.4)
+            robot.move(50, 50)
+            time.sleep(2)
 
     rawCapture.truncate(0)
     if cv.waitKey(1) == 27:
