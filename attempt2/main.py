@@ -18,7 +18,8 @@ trig_move = -1
 trig_im = []
 trig_time = 0
 trig_end = 0
-count = 0
+count_r = 0
+count_y = 0
 for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
     image = frame.array
     cv.imshow("1", image)
@@ -105,11 +106,14 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
             time.sleep(0.2)
             robot.move(-50, 50)
             time.sleep(0.6)
+            if trig == 11:
+                count_r += 1
+            elif trig == 12:
+                count_y += 1
             trig = 0
-            count += 1
 
     rawCapture.truncate(0)
-    if cv.waitKey(1) == 27 or count == 6:
+    if cv.waitKey(1) == 27 or (count_r >= 3 and count_y >= 3):
         robot.ml.stop()
         robot.mr.stop()
         break
