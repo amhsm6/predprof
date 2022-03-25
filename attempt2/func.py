@@ -44,38 +44,38 @@ def centre_mass(perspective, d=0):
     hist = np.sum(perspective, axis=0)
 
     mid = hist.shape[0] // 2
-    i = 0
-    centre = 0
-    sum_mass = 0
-    while (i <= mid - 50):
-        centre += hist[i] * (i + 1)
-        sum_mass += hist[i]
-        i += 1
-    if sum_mass>0:
-        mid_mass_left = centre / sum_mass
-    else:
-        mid_mass_left = mid-1
+    #i = 0
+    #centre = 0
+    #sum_mass = 0
+    #while (i <= mid - 50):
+    #    centre += hist[i] * (i + 1)
+    #    sum_mass += hist[i]
+    #    i += 1
+    #if sum_mass>0:
+    #    mid_mass_left = centre / sum_mass
+    #else:
+    #    mid_mass_left = mid-1
 
     centre = 0
     sum_mass = 0
-    i = mid + 50
+    i = 0
     while (i < hist.shape[0]):
         centre += hist[i] * (i + 1)
         sum_mass += hist[i]
         i += 1
-    if sum_mass>0:
+    if sum_mass > 0:
         mid_mass_right = centre / sum_mass
     else:
-        mid_mass_right = mid+1
+        mid_mass_right = 100
 
     # print(mid_mass_left)
     # print(mid_mass_right)
-    mid_mass_left = int(mid_mass_left)
+    #mid_mass_left = int(mid_mass_left)
     mid_mass_right = int(mid_mass_right)
     if d:
-        cv2.line(perspective, (mid_mass_left, 0), (mid_mass_left, 300), 50, 2)
+        #cv2.line(perspective, (mid_mass_left, 0), (mid_mass_left, 300), 50, 2)
         cv2.line(perspective, (mid_mass_right, 0), (mid_mass_right, 300), 50, 2)
         # cv2.line(perspective, ((mid_mass_right + mid_mass_left) // 2, 0), ((mid_mass_right + mid_mass_left) // 2, 300), 110, 3)
         cv2.imshow('CentrMass', perspective)
 
-    return mid_mass_left, mid_mass_right
+    return mid_mass_right

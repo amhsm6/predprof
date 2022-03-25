@@ -51,6 +51,8 @@ class Robot:
         self.mr.start(0)
         
         self.erld = 0
+        self.trig = 1
+        self.time = 0
         
     def servo_move(self, angle):
         pwm = GPIO.PWM(SRV, 50)
@@ -195,22 +197,36 @@ class Robot:
         img = cv.resize(img, (400, 300))
         binary = func.binarize(img)
         perspective = func.trans_perspective(binary, TRAP, RECT, (400, 300))
-        left, right = func.centre_mass(perspective, d=1)
+        right = func.centre_mass(perspective, d=1)
 
-        err = 0 - ((left + right) // 2 - 200)
+        binary = binary[200:, :]
+        ctrs, _ = cv.findContours(binary, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        if ctrs:
+            rect = cv.boundingRect(max(ctrs, key=cv.contourArea))
+            if self.trig == 1 and rect[2] > 300:
+                self.move(-50, 50)
+                time.sleep(1.0)
+                self.move(0, 0)
+                self.trig = 0
+                self.time = time.time()
+                return
+            if self.trig == 0 and time.time() - self.time > 0.3:
+                self.trig = 1
+
+        #err = 0 - ((left + right) // 2 - 200)
         if way == 'right':
-            err = 280 - right
-        elif way == 'left':
-            err = 120 - left
+            err = (right - 200) / 200 * 20
+        #elif way == 'left':
+        #    err = 120 - left
 
-        up = err * 0.2 + (err - self.erld) * 0.1
+        up = err * 1.5 + (err - self.erld) * 1.0
         self.erld = err
-        vl = speed + up
-        vr = speed - up
+        vl = speed - up
+        vr = speed + up
 
         self.move(vl, vr)
 
-    def detect_color(self, img, color):
+    def detect_color(self, img, color, show = 0):
         img = cv.resize(img, (400, 300))
         if color == "red":
             lower = [0, 0, 100]
@@ -219,14 +235,17 @@ class Robot:
             lower = [0, 150, 120]
             upper = [130, 220, 220]
         elif color == "green":
+            img = img[200:, :]
             lower = [0, 100, 0]
             upper = [100, 220, 120]
         elif color == "brown":
-            lower = [0, 60, 100]
-            upper = [80, 120, 220]
+            img = cv.cvtColor(img, cv.COLOR_BGR2HSV)[200:, :]
+            lower = [6, 26, 83]
+            upper = [19, 255, 205]
 
         img = cv.inRange(img, np.array(lower), np.array(upper))
-        cv.imshow("123", img)
+        if show:
+            cv.imshow("123", img)
 
         s = np.sum(img)
         if s > 1000000:

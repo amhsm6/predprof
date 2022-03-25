@@ -16,6 +16,9 @@ robot.open()
 trig = 0
 trig_move = -1
 trig_im = []
+trig_time = 0
+trig_end = 0
+count = 0
 for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
     image = frame.array
     cv.imshow("1", image)
@@ -64,19 +67,34 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
                 robot.move(-50, 50)
                 trig += 2
         elif trig == 7 or trig == 8:
-            if not robot.detect_end(image):
-                time.sleep(0.1)
+            if robot.detect_color(image, "green")[0]:
+                if trig == 7:
+                    trig = 11
+
+            if robot.detect_color(image, "brown", 1)[0]:
+                if trig == 8:
+                    trig = 12
+
+            if trig_end == 1 and time.time() - trig_time > 0.5:
+                robot.trig = 0
+                robot.time = time.time()
                 trig += 2
+            elif not robot.detect_end(image) and trig_end == 0:
+                trig_time = time.time()
+                trig_end = 1
+            elif robot.detect_end(image):
+                trig_time = time.time()
+                trig_end = 0
         elif trig == 9 or trig == 10:
             robot.line(image, 30, "right")
             
-            #if robot.detect_color(image, "green"):
-            #    if trig == 9:
-            #        trig == 11
+            if robot.detect_color(image, "green")[0]:
+                if trig == 9:
+                    trig = 11
 
-            if robot.detect_color(image, "brown"):
+            if robot.detect_color(image, "brown", 1)[0]:
                 if trig == 10:
-                    trig == 12
+                    trig = 12
         elif trig == 11 or trig == 12:
             robot.move(50, 50)
             time.sleep(0.3)
@@ -86,13 +104,12 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
             robot.move(-50, -50)
             time.sleep(0.2)
             robot.move(-50, 50)
-            time.sleep(0.4)
-            robot.move(50, 50)
-            time.sleep(2)
+            time.sleep(0.6)
+            trig = 0
+            count += 1
 
     rawCapture.truncate(0)
-    if cv.waitKey(1) == 27:
+    if cv.waitKey(1) == 27 or count == 6:
         robot.ml.stop()
         robot.mr.stop()
-        robot.srv.stop()
         break
