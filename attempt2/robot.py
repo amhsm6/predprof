@@ -199,11 +199,11 @@ class Robot:
         perspective = func.trans_perspective(binary, TRAP, RECT, (400, 300))
         right = func.centre_mass(perspective, d=1)
 
-        binary = binary[200:, :]
+        binary = binary[150:, :]
         ctrs, _ = cv.findContours(binary, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
         if ctrs:
             rect = cv.boundingRect(max(ctrs, key=cv.contourArea))
-            if self.trig == 1 and rect[2] > 300:
+            if self.trig == 1 and rect[2] > 220:
                 self.move(-50, 50)
                 time.sleep(1.0)
                 self.move(0, 0)
@@ -215,14 +215,19 @@ class Robot:
 
         #err = 0 - ((left + right) // 2 - 200)
         if way == 'right':
-            err = (right - 200) / 200 * 20
+            err = (right - 200) / 200 * 25
         #elif way == 'left':
         #    err = 120 - left
 
-        up = err * 1.5 + (err - self.erld) * 1.0
+        up = err * 1.3 + (err - self.erld) * 1.0
         self.erld = err
         vl = speed - up
         vr = speed + up
+
+        if vl < -60:
+            vl = -60
+        if vr > 60:
+            vr = 60
 
         self.move(vl, vr)
 
@@ -232,16 +237,21 @@ class Robot:
             lower = [0, 0, 100]
             upper = [90, 90, 220]
         elif color == "yellow":
-            lower = [0, 150, 120]
-            upper = [130, 220, 220]
+            img = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+            lower = [18, 70, 45]
+            upper = [66, 255, 185]
         elif color == "green":
-            img = img[200:, :]
-            lower = [0, 100, 0]
-            upper = [100, 220, 120]
+            img = img[150:, :]
+            lower = [0, 130, 0]
+            upper = [100, 220, 110]
         elif color == "brown":
             img = cv.cvtColor(img, cv.COLOR_BGR2HSV)[200:, :]
             lower = [6, 26, 83]
             upper = [19, 255, 205]
+        elif color == "black":
+            img = cv.cvtColor(img, cv.COLOR_BGR2HSV)[200:, :]
+            lower = [0, 0, 23]
+            upper = [179, 56, 75]
 
         img = cv.inRange(img, np.array(lower), np.array(upper))
         if show:
@@ -255,7 +265,8 @@ class Robot:
     def detect_end(self, img):
         lower = [130, 70, 0]
         upper = [240, 180, 90]
-        img = cv.inRange(img, np.array(lower), np.array(upper))
+        img = cv.resize(img, (400, 300))
+        img = cv.inRange(img[200:, :], np.array(lower), np.array(upper))
 
         s = np.sum(img)
         if s > 2000000:
@@ -268,11 +279,16 @@ class Robot:
 
         cube_x = rect[0]+rect[2]//2
         err = 200 - cube_x
-        up = err * 0.2 + (err - self.erld) * 0.3
+        up = err * 0.33 + (err - self.erld) * 0.3
         self.erld = err
+
+        if abs(up) > 40:
+            up = up / abs(up) * 40
         self.move(-up, up)
 
-        return err
+        if abs(up) < 6:
+            return True
+        return False
 
     def close(self):
         self.servo_move(0)

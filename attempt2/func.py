@@ -4,8 +4,8 @@ import numpy as np
 
 def binarize(img, d=0):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    lower_blue = np.array([90, 120, 0], dtype="uint8")
-    upper_blue = np.array([150, 255, 255], dtype="uint8")
+    lower_blue = np.array([100, 110, 0], dtype="uint8")
+    upper_blue = np.array([150, 200, 255], dtype="uint8")
     binary = cv2.inRange(hsv, lower_blue, upper_blue)
 
     if d:

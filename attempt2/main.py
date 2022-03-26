@@ -26,6 +26,8 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
 
     if trig <= 0:
         if robot.detect_end(image):
+            robot.move(-40, -40)
+            time.sleep(0.5)
             trig = -1
             robot.move(50 * trig_move, 50 * -trig_move)
         else:
@@ -35,44 +37,51 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
                 trig_move = trig_move
 
         if trig == 0:
-            robot.move(20, 20)
+            robot.move(30, 30)
             (red, red_im) = robot.detect_color(image, "red")
-            (yellow, yellow_im) = robot.detect_color(image, "yellow")
+            (yellow, yellow_im) = robot.detect_color(image, "yellow", 1)
 
             if red:
                 print("red")
                 trig = 1
+                robot.move(0, 0)
+                time.sleep(1)
             elif yellow:
                 print("yellow")
                 trig = 2
+                robot.move(0, 0)
+                time.sleep(1)
     else:
         if trig == 1 or trig == 2:
             (b, im) = robot.detect_color(image, "red" if trig == 1 else "yellow")
             if b:
-                err = robot.center(im)
-                if abs(err) < 15:
+                if robot.center(im):
                     trig += 2
             else:
                 trig = 0
         elif trig == 3 or trig == 4:
-            robot.move(50, 50)
-            time.sleep(0.6)
+            robot.move(30, 30)
+            time.sleep(1.5)
             robot.move(0, 0)
             time.sleep(0.5)
             robot.close()
             time.sleep(1)
-            robot.move(50, 50)
+            robot.move(-50, -50)
+            time.sleep(0.6)
+            robot.move(40, 40)
             trig += 2
         elif trig == 5 or trig == 6:
             if robot.detect_end(image):
+                robot.move(-40, -40)
+                time.sleep(0.5)
                 robot.move(-50, 50)
                 trig += 2
         elif trig == 7 or trig == 8:
-            if robot.detect_color(image, "green")[0]:
+            if robot.detect_color(image, "green", 1)[0]:
                 if trig == 7:
                     trig = 11
 
-            if robot.detect_color(image, "brown", 1)[0]:
+            if robot.detect_color(image, "black")[0]:
                 if trig == 8:
                     trig = 12
 
@@ -89,11 +98,11 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
         elif trig == 9 or trig == 10:
             robot.line(image, 30, "right")
             
-            if robot.detect_color(image, "green")[0]:
+            if robot.detect_color(image, "green", 1)[0]:
                 if trig == 9:
                     trig = 11
 
-            if robot.detect_color(image, "brown", 1)[0]:
+            if robot.detect_color(image, "black")[0]:
                 if trig == 10:
                     trig = 12
         elif trig == 11 or trig == 12:
